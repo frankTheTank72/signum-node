@@ -1165,7 +1165,7 @@ public final class BlockchainProcessorImpl implements BlockchainProcessor {
         derivedTableManager.getDerivedTables().forEach(DerivedTable::finish);
         commitCounter++
         int commitLimit = block.getHeight() >= syncCommitBlockHeight ? 1 : commitBlocks;
-        if (commitCounter >= commitBlocks) {
+        if (commitCounter >= commitLimit) {
           stores.commitTransaction();
           // We make sure downloadCache do not have this block anymore, but only after all
           // DBs have it
