@@ -14,6 +14,9 @@ public class Props {
     public static final Prop<String> APPLICATION = new Prop<>("node.application", Signum.APPLICATION);
     public static final Prop<String> VERSION = new Prop<>("node.version", Signum.VERSION.toString());
 
+    // Optimize Sync Speed
+    public static final Prop<Integer> DB_COMMIT_BLOCKS = new Prop<>("DB.CommitBlocks", 20);
+
     // Structural parameters
     public static final Prop<Integer> BLOCK_TIME = new Prop<>("node.blockTime", 240);
     public static final Prop<Integer> DECIMAL_PLACES = new Prop<>("node.decimalPlaces", 8);

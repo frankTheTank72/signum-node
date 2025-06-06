@@ -100,6 +100,9 @@ public final class BlockchainProcessorImpl implements BlockchainProcessor {
   private final IndirectIncomingService indirectIncomingService;
   private final long genesisBlockId;
 
+  private final int commitBlocks = propertyService.getInt(Props.DB_COMMIT_BLOCKS);
+  private int commitCounter = 0;
+
   private static final int MAX_TIMESTAMP_DIFFERENCE = 15;
   private boolean oclVerify;
   private final int oclUnverifiedQueue;
@@ -122,6 +125,7 @@ public final class BlockchainProcessorImpl implements BlockchainProcessor {
   private int autoPopOffLastStuckHeight = 0;
   private int autoPopOffNumberOfBlocks = 0;
   private ATProcessorCache atProcessorCache = ATProcessorCache.getInstance();
+
 
   public final void setOclVerify(Boolean b) {
     oclVerify = b;
