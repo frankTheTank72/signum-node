@@ -102,6 +102,7 @@ public final class BlockchainProcessorImpl implements BlockchainProcessor {
   private final long genesisBlockId;
 
   private final int commitBlocks;
+  private final int syncCommitBlockHeight;
   private int commitCounter = 0;
 
   private static final int MAX_TIMESTAMP_DIFFERENCE = 15;
@@ -179,6 +180,7 @@ public final class BlockchainProcessorImpl implements BlockchainProcessor {
     this.indirectIncomingService = indirectIncomingService;
     this.propertyService = propertyService;
     this.commitBlocks = propertyService.getInt(Props.DB_COMMIT_BLOCKS);
+    this.syncCommitBlockHeight = propertyService.getInt(Props.DB_SYNC_COMMIT_BLOCKS);
 
     autoPopOffEnabled = propertyService.getBoolean(Props.AUTO_POP_OFF_ENABLED);
 
