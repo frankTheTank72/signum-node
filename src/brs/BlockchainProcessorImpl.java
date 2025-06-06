@@ -1163,7 +1163,7 @@ public final class BlockchainProcessorImpl implements BlockchainProcessor {
 
         accept(block, remainingAmount, remainingFee);
         derivedTableManager.getDerivedTables().forEach(DerivedTable::finish);
-        commitCounter++
+        commitCounter++;
         int commitLimit = block.getHeight() >= syncCommitBlockHeight ? 1 : commitBlocks;
         if (commitCounter >= commitLimit) {
           stores.commitTransaction();
