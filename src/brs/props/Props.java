@@ -16,6 +16,7 @@ public class Props {
 
     // Optimize Sync Speed
     public static final Prop<Integer> DB_COMMIT_BLOCKS = new Prop<>("DB.CommitBlocks", 20);
+    public static final Prop<Integer> DB_SYNC_COMMIT_BLOCKS = new Prop<>("DB.SyncCommitBlocks", 1_400_000);
 
     // Structural parameters
     public static final Prop<Integer> BLOCK_TIME = new Prop<>("node.blockTime", 240);

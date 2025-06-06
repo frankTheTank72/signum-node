@@ -34,6 +34,7 @@ import brs.util.JSON;
 import brs.util.Listener;
 import brs.util.Listeners;
 import brs.util.ThreadPool;
+import brs.db.sql.Db;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -100,7 +101,8 @@ public final class BlockchainProcessorImpl implements BlockchainProcessor {
   private final IndirectIncomingService indirectIncomingService;
   private final long genesisBlockId;
 
-  private final int commitBlocks = propertyService.getInt(Props.DB_COMMIT_BLOCKS);
+  private final int commitBlocks;
+  private final int syncCommitBlockHeight;
   private int commitCounter = 0;
 
   private static final int MAX_TIMESTAMP_DIFFERENCE = 15;
@@ -177,6 +179,8 @@ public final class BlockchainProcessorImpl implements BlockchainProcessor {
     this.accountService = accountService;
     this.indirectIncomingService = indirectIncomingService;
     this.propertyService = propertyService;
+    this.commitBlocks = propertyService.getInt(Props.DB_COMMIT_BLOCKS);
+    this.syncCommitBlockHeight = propertyService.getInt(Props.DB_SYNC_COMMIT_BLOCKS);
 
     autoPopOffEnabled = propertyService.getBoolean(Props.AUTO_POP_OFF_ENABLED);
 
@@ -990,7 +994,9 @@ public final class BlockchainProcessorImpl implements BlockchainProcessor {
 
   private void pushBlock(final Block block) throws BlockNotAcceptedException {
     synchronized (transactionProcessor.getUnconfirmedTransactionsSyncObj()) {
-      stores.beginTransaction();
+      if (!Db.isInTransaction()) {
+        stores.beginTransaction();
+      }
       int curTime = timeService.getEpochTime();
 
       Block previousLastBlock = null;
@@ -1157,10 +1163,16 @@ public final class BlockchainProcessorImpl implements BlockchainProcessor {
 
         accept(block, remainingAmount, remainingFee);
         derivedTableManager.getDerivedTables().forEach(DerivedTable::finish);
-        stores.commitTransaction();
-        // We make sure downloadCache do not have this block anymore, but only after all
-        // DBs have it
-        downloadCache.removeBlock(block);
+        commitCounter++;
+        int commitLimit = block.getHeight() >= syncCommitBlockHeight ? 1 : commitBlocks;
+        if (commitCounter >= commitLimit) {
+          stores.commitTransaction();
+          // We make sure downloadCache do not have this block anymore, but only after all
+          // DBs have it
+          downloadCache.removeBlock(block);
+          commitCounter = 0;
+          stores.endTransaction();
+        }
         if (trimDerivedTables && (block.getHeight() % Constants.MAX_ROLLBACK) == 0) {
           if (checkDatabaseState() == 0) {
             // Only trim a consistent database, otherwise it would be impossible to fix it
@@ -1174,12 +1186,12 @@ public final class BlockchainProcessorImpl implements BlockchainProcessor {
         }
       } catch (BlockNotAcceptedException | ArithmeticException e) {
         stores.rollbackTransaction();
+        stores.endTransaction();
+        commitCounter = 0;
         blockchain.setLastBlock(previousLastBlock);
         downloadCache.resetCache();
         atProcessorCache.reset();
         throw e;
-      } finally {
-        stores.endTransaction();
       }
       logger.debug("Successfully pushed {} (height {})", block.getId(), block.getHeight());
       statisticsManager.blockAdded();
