@@ -400,7 +400,7 @@ public class SqlBlockchainStore implements BlockchainStore {
     int commitmentHeight = Math.min(height - commitmentWait, endHeight);
 
     Collection<byte[]> commitmmentAddBytes = Db.useDSLContext(ctx -> {
-      SelectConditionStep<Record1<byte[]>> select = ctx.select(TRANSACTION.ATTACHMENT_BYTES).from(TRANSACTION).where(TRANSACTION.TYPE.eq(TransactionType.TYPE_SIGNA_MINING.getType()))
+      SelectConditionStep<Record1<byte[]>> select = ctx.select(TRANSACTION.ATTACHMENT_BYTES).from(TRANSACTION.forceIndex("tx_sender_type_subtype_height_idx")).where(TRANSACTION.TYPE.eq(TransactionType.TYPE_SIGNA_MINING.getType()))
         .and(TRANSACTION.SUBTYPE.eq(TransactionType.SUBTYPE_SIGNA_MINING_COMMITMENT_ADD))
         .and(TRANSACTION.HEIGHT.le(commitmentHeight));
       if (accountId != 0L)
@@ -408,7 +408,7 @@ public class SqlBlockchainStore implements BlockchainStore {
       return select.fetch().getValues(TRANSACTION.ATTACHMENT_BYTES);
     });
     Collection<byte[]> commitmmentRemoveBytes = Db.useDSLContext(ctx -> {
-      SelectConditionStep<Record1<byte[]>> select = ctx.select(TRANSACTION.ATTACHMENT_BYTES).from(TRANSACTION).where(TRANSACTION.TYPE.eq(TransactionType.TYPE_SIGNA_MINING.getType()))
+      SelectConditionStep<Record1<byte[]>> select = ctx.select(TRANSACTION.ATTACHMENT_BYTES).from(TRANSACTION.forceIndex("tx_sender_type_subtype_height_idx")).where(TRANSACTION.TYPE.eq(TransactionType.TYPE_SIGNA_MINING.getType()))
         .and(TRANSACTION.SUBTYPE.eq(TransactionType.SUBTYPE_SIGNA_MINING_COMMITMENT_REMOVE))
         .and(TRANSACTION.HEIGHT.le(endHeight));
       if (accountId != 0L)
