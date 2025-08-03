@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class LegacyDocsServlet extends HttpServlet {
 
@@ -176,16 +177,12 @@ public class LegacyDocsServlet extends HttpServlet {
 
 
   private SortedMap<String, SortedSet<String>> buildRequestTags() {
-    SortedMap<String, SortedSet<String>> r = new TreeMap<>();
-    for (Map.Entry<String, ApiServlet.HttpRequestHandler> entry : apiRequestHandlers.entrySet()) {
-      final String requestType = entry.getKey();
-      final Set<LegacyDocTag> legacyDocTags = entry.getValue().getAPITags();
-      for (LegacyDocTag legacyDocTag : legacyDocTags) {
-          SortedSet<String> set = r.computeIfAbsent(legacyDocTag.name(), k -> new TreeSet<>());
-          set.add(requestType);
-      }
-    }
-    return r;
+    return apiRequestHandlers.entrySet().stream()
+        .flatMap(entry -> entry.getValue().getAPITags().stream()
+            .map(tag -> new AbstractMap.SimpleEntry<>(tag.name(), entry.getKey())))
+        .collect(Collectors.groupingBy(Map.Entry::getKey,
+            TreeMap::new,
+            Collectors.mapping(Map.Entry::getValue, Collectors.toCollection(TreeSet::new))));
   }
 
   private String buildLinks(HttpServletRequest req) {

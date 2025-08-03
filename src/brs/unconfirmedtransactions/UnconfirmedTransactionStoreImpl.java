@@ -37,6 +37,9 @@ public class UnconfirmedTransactionStoreImpl implements UnconfirmedTransactionSt
   private final TransactionDb transactionDb;
 
   private final SortedMap<Long, List<Transaction>> internalStore;
+  private final Map<Transaction, Long> transactionSlotMap = new HashMap<>();
+  private final Map<Long, Transaction> transactionsById = new HashMap<>();
+  private final Map<String, Transaction> transactionsByFullHash = new HashMap<>();
 
   private int totalSize;
   private final int maxSize;
@@ -198,6 +201,9 @@ public class UnconfirmedTransactionStoreImpl implements UnconfirmedTransactionSt
       internalStore.clear();
       reservedBalanceCache.clear();
       transactionDuplicatesChecker.clear();
+      transactionSlotMap.clear();
+      transactionsById.clear();
+      transactionsByFullHash.clear();
     }
   }
 
@@ -240,25 +246,11 @@ public class UnconfirmedTransactionStoreImpl implements UnconfirmedTransactionSt
   }
 
   private Transaction getTransactionInCache(Long transactionId) {
-    for (List<Transaction> amountSlot : internalStore.values()) {
-      for (Transaction t : amountSlot) {
-        if (t.getId() == transactionId) {
-          return t;
-        }
-      }
-    }
-    return null;
+    return transactionsById.get(transactionId);
   }
 
   private Transaction getTransactionInChache(String fullHash) {
-    for (List<Transaction> amountSlot : internalStore.values()) {
-      for (Transaction t : amountSlot) {
-        if (fullHash.equals(t.getFullHash())) {
-          return t;
-        }
-      }
-    }
-    return null;
+    return transactionsByFullHash.get(fullHash);
   }
 
   private boolean transactionCanBeAddedToCache(Transaction transaction) {
@@ -336,8 +328,12 @@ public class UnconfirmedTransactionStoreImpl implements UnconfirmedTransactionSt
   }
 
   private void addTransaction(Transaction transaction, Peer peer) {
-    final List<Transaction> slot = getOrCreateAmountSlotForTransaction(transaction);
+    final long amountSlotNumber = amountSlotForTransaction(transaction);
+    final List<Transaction> slot = getOrCreateAmountSlot(amountSlotNumber);
     slot.add(transaction);
+    transactionSlotMap.put(transaction, amountSlotNumber);
+    transactionsById.put(transaction.getId(), transaction);
+    transactionsByFullHash.put(transaction.getFullHash(), transaction);
     totalSize++;
 
     fingerPrintsOverview.put(transaction, new HashSet<>());
@@ -363,9 +359,7 @@ public class UnconfirmedTransactionStoreImpl implements UnconfirmedTransactionSt
     }
   }
 
-  private List<Transaction> getOrCreateAmountSlotForTransaction(Transaction transaction) {
-    final long amountSlotNumber = amountSlotForTransaction(transaction);
-
+  private List<Transaction> getOrCreateAmountSlot(long amountSlotNumber) {
     if (!this.internalStore.containsKey(amountSlotNumber)) {
       this.internalStore.put(amountSlotNumber, new ArrayList<>());
     }
@@ -397,22 +391,25 @@ public class UnconfirmedTransactionStoreImpl implements UnconfirmedTransactionSt
   }
 
   private void removeTransaction(Transaction transaction) {
-    if (transaction == null)
+    if (transaction == null) {
       return;
+    }
 
-    for(Long amountSlotNumber : internalStore.keySet()) {
+    Long amountSlotNumber = transactionSlotMap.remove(transaction);
+    if (amountSlotNumber != null) {
       List<Transaction> amountSlot = internalStore.get(amountSlotNumber);
-      if(amountSlot.contains(transaction)) {
+      if (amountSlot != null) {
         amountSlot.remove(transaction);
 
         if (amountSlot.isEmpty()) {
           this.internalStore.remove(amountSlotNumber);
         }
-        break;
       }
     }
 
     fingerPrintsOverview.remove(transaction);
+    transactionsById.remove(transaction.getId());
+    transactionsByFullHash.remove(transaction.getFullHash());
     totalSize--;
     transactionDuplicatesChecker.removeTransaction(transaction);
     unconfirmedFullHash.remove(transaction);

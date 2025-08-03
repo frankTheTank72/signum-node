@@ -47,9 +47,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -1416,7 +1416,7 @@ public final class BlockchainProcessorImpl implements BlockchainProcessor {
           && !Signum.getFluxCapacitor().getValue(FluxValues.SPEEDWAY)) {
           // In this step we get all unconfirmed transactions and then sort them by slot,
           // followed by priority
-          Map<Long, TreeMap<Long, Transaction>> unconfirmedTransactionsOrderedBySlotThenPriority = new HashMap<>();
+          NavigableMap<Long, TreeMap<Long, Transaction>> unconfirmedTransactionsOrderedBySlotThenPriority = new TreeMap<>();
           inclusionCandidates.collect(Collectors.toMap(Function.identity(), priorityCalculator::applyAsLong))
             .forEach((transaction, priority) -> {
               long slot = (transaction.getFeeNqt() - (transaction.getFeeNqt() % FEE_QUANT_SIP3))
@@ -1442,23 +1442,15 @@ public final class BlockchainProcessorImpl implements BlockchainProcessor {
           Map<Long, Transaction> slotTransactionsToBeincluded = new HashMap<>();
           int maxSlot = Signum.getFluxCapacitor().getValue(FluxValues.MAX_NUMBER_TRANSACTIONS);
           for (long slot = maxSlot; slot >= 1; slot--) {
-            boolean slotFilled = false;
-            for (long slotUnconfirmed = maxSlot; slotUnconfirmed >= slot; slotUnconfirmed--) {
-              // using a tree map we already have it naturally sorted by priority
-              TreeMap<Long, Transaction> candidateTxs = unconfirmedTransactionsOrderedBySlotThenPriority
-                .get(slotUnconfirmed);
-              if (candidateTxs != null) {
-                Iterator<Transaction> itTx = candidateTxs.values().iterator();
-                while (itTx.hasNext()) {
-                  Transaction tx = itTx.next();
-
-                  slotTransactionsToBeincluded.put(slot, tx);
-                  itTx.remove();
-                  slotFilled = true;
-                  break;
-                }
-                if (slotFilled) {
-                  break;
+            NavigableMap<Long, TreeMap<Long, Transaction>> eligible = unconfirmedTransactionsOrderedBySlotThenPriority.tailMap(slot, true);
+            if (!eligible.isEmpty()) {
+              Map.Entry<Long, TreeMap<Long, Transaction>> highestSlotEntry = eligible.lastEntry();
+              TreeMap<Long, Transaction> candidateTxs = highestSlotEntry.getValue();
+              Map.Entry<Long, Transaction> candidate = candidateTxs.pollFirstEntry();
+              if (candidate != null) {
+                slotTransactionsToBeincluded.put(slot, candidate.getValue());
+                if (candidateTxs.isEmpty()) {
+                  unconfirmedTransactionsOrderedBySlotThenPriority.remove(highestSlotEntry.getKey());
                 }
               }
             }
