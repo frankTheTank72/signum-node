@@ -9,7 +9,7 @@ updates:
       time: "07:00"
       timezone: "Europe/Zurich"
     target-branch: "develop"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 20
     groups:
       gradle-minor-patch:
         applies-to: version-updates
@@ -43,12 +43,3 @@ updates:
       timezone: "Europe/Zurich"
     target-branch: "develop"
 
-  # Dev Containers – Images in .devcontainer
-  - package-ecosystem: "devcontainers"
-    directory: "/.devcontainer"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "07:30"
-      timezone: "Europe/Zurich"
-    target-branch: "develop"
