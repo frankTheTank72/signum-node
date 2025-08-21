@@ -51,6 +51,8 @@ dependencies {
 
     implementation 'org.jooq:jooq:3.20.5'
     implementation 'org.flywaydb:flyway-core:11.11.1'
+    implementation 'org.flywaydb:flyway-database-postgresql:11.11.1'
+    implementation 'org.flywaydb:flyway-database-sqlite:11.11.1'
     implementation 'org.flywaydb:flyway-mysql:11.11.1'
     implementation 'org.postgresql:postgresql:42.7.3'
     implementation 'com.kohlschutter.junixsocket:junixsocket-core:2.8.3'
