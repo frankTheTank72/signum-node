@@ -35,8 +35,6 @@ public class Stores {
         this.digitalGoodsStoreStore = new SqlDigitalGoodsStoreStore(derivedTableManager);
         this.escrowStore = new SqlEscrowStore(derivedTableManager);
         this.orderStore = new SqlOrderStore(derivedTableManager);
-        derivedTableManager.registerDerivedTable(this.orderStore.getAskOrderTable());
-        derivedTableManager.registerDerivedTable(this.orderStore.getBidOrderTable());
         this.tradeStore = new SqlTradeStore(derivedTableManager);
         this.subscriptionStore = new SqlSubscriptionStore(derivedTableManager);
         this.unconfirmedTransactionStore = new UnconfirmedTransactionStoreImpl(timeService, propertyService,
