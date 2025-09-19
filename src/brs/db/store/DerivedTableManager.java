@@ -9,17 +9,18 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class DerivedTableManager {
 
-  private final Logger logger = LoggerFactory.getLogger(DerivedTableManager.class);
+    private final Logger logger = LoggerFactory.getLogger(DerivedTableManager.class);
 
-  private final List<DerivedTable> derivedTables = new CopyOnWriteArrayList<>();
+    private final List<DerivedTable> derivedTables = new CopyOnWriteArrayList<>();
 
-  public List<DerivedTable> getDerivedTables() {
-    return derivedTables;
-  }
+    public List<DerivedTable> getDerivedTables() {
+        return derivedTables;
+    }
 
-  public void registerDerivedTable(DerivedTable table) {
-    logger.info("Registering derived table " + table.getClass());
-    derivedTables.add(table);
-  }
+    public void registerDerivedTable(DerivedTable table) {
+        logger.info("Registering derived table " + table.getClass());
+        logger.info("Registering the following derived table {}", table.getTable());
+        derivedTables.add(table);
+    }
 
 }
